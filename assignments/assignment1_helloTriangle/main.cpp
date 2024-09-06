@@ -1,4 +1,4 @@
-#include <stdio.h>
+`#include <stdio.h>
 #include <math.h>
 
 #include <ew/external/glad.h>
@@ -26,6 +26,14 @@ int main() {
 		return 1;
 	}
 	//Initialization goes here!
+
+
+	//Create Frame buffer
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 	
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
