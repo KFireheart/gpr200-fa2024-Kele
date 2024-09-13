@@ -12,7 +12,7 @@ const int SCREEN_HEIGHT = 720;
 float vertices[] = {
 	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 	 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-	 0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+	 0.0f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f
 };
 
 const char* vertexShaderSource = R"(
@@ -20,19 +20,27 @@ const char* vertexShaderSource = R"(
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec4 aColor;
 out vec4 Color;
+
+uniform float _Time;
+
 void main()
 {
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+	Color = aColor; //Pass through
+	vec3 pos = aPos;
+	pos.y += sin(_Time * 3.0 + pos.x) * 0.2;
+    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
 }
 )";
 
 
-const char* fragmentShaderSource = R"(#version 330 core
+const char* fragmentShaderSource = R"(
+#version 330 core
 out vec4 FragColor;
 in vec4 Color;
+uniform float _Time;
 void main()
 {
-    FragColor = Color;
+    FragColor = Color * abs(tan(_Time * 2.0));
 } 
 )";
 
@@ -113,11 +121,18 @@ int main() {
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
+		//INPUT
+		// UPDATE
+		float time = (float)glfwGetTime();
 		//Clear framebuffer
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
+		glUniform1f(glGetUniformLocation(shaderProgram, "_Time"), time);
+
+
 		glBindVertexArray(VAO);
 
 		//DRAW CALL
