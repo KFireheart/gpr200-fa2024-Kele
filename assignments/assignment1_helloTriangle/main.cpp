@@ -71,7 +71,7 @@ int main() {
 
 		float time = glfwGetTime();
 		shader.setFloat("updateColor", abs(sin(time)));
-		shader.setFloat("time", time);
+		shader.setFloat("_Time", time);
 
 		glBindVertexArray(VAO);
 
