@@ -1,26 +1,27 @@
 #pragma once
 
-//#ifndef SHADER_H
-#define SHADER_H
-
-#include "../ew/ewMath/external/glad.h"
+#include "../external/glad.h"
 
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
+
 
 namespace jeff {
-	class Shader {
-	public:
-		unsigned int ID;
+    class Shader
+    {
+    public:
+        // the program ID
+        unsigned int ID;
 
-		Shader(const char* vertexPath, const char* fragmentPath);
+        // constructor reads and builds the shader
+        Shader(const char* vertexPath, const char* fragmentPath);
 
-		void use();
+        // use/activate the shader
+        void use();
 
-		void setBool();
-		void setInt();
-		void setFloat();
-	};
+        // utility uniform functions
+        void setBool(const std::string& name, bool value) const;
+        void setInt(const std::string& name, int value) const;
+        void setFloat(const std::string& name, float value) const;
+    };
+
 }
