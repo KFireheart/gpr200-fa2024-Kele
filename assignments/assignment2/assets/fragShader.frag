@@ -1,8 +1,12 @@
 #version 330 core
 out vec4 FragColor;
-in vec4 Color;
-uniform float _Time;
+  
+in vec3 ourColor;
+in vec2 TexCoord;
+
+uniform sampler2D ourTexture;
+
 void main()
 {
-    FragColor = Color * abs(tan(_Time * 2.0));
+    FragColor = texture(ourTexture, TexCoord);
 }
