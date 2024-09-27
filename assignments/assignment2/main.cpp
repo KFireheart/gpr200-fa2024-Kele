@@ -14,10 +14,18 @@ float texCoordMulip = 10.0f;
 
 float vertices[] = {
 	// positions          // colors          // texture coords
-	1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f * texCoordMulip, 1.0f * texCoordMulip,  // top right
-	1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f * texCoordMulip, 0.0f,						// bottom right
-   -1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,											// bottom left
-   -1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f * texCoordMulip						// top left 
+	0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+	0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+};
+
+float characterVerts[]{
+	// positions          // colors           // texture coords
+	 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+	 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 };
 
 unsigned int indicies[] = {
@@ -48,10 +56,9 @@ int main() {
 
 	stbi_set_flip_vertically_on_load(true);
 
-	//Initialization goes here!
 
 
-	//Texture
+	//Texture 1
 		unsigned int tex1, tex2;
 	glGenTextures(1, &tex1);
 	glBindTexture(GL_TEXTURE_2D, tex1); 
@@ -68,7 +75,7 @@ int main() {
 	unsigned char *data = stbi_load("assets/grass.jpg", &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -77,6 +84,8 @@ int main() {
 	}
 	stbi_image_free(data);
 
+
+	//Texture 2
 	glGenTextures(1, &tex2);
 	glBindTexture(GL_TEXTURE_2D, tex2);
 	// set the texture wrapping parameters
@@ -87,6 +96,9 @@ int main() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_CLAMP_TO_BORDER);
 
 	data = stbi_load("assets/HappyMushroom.png", &width, &height, &nrChannels, 0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	if (data)
 	{
 		
@@ -100,15 +112,13 @@ int main() {
 	stbi_image_free(data);
 
 
-	//Vertex array object
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	
+	unsigned int VBO1, VAO1;
+	glGenVertexArrays(1, &VAO1);
+	glBindVertexArray(VAO1);
 
-
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glGenBuffers(1, &VBO1);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	unsigned int EBO;
@@ -131,12 +141,6 @@ int main() {
 	//Create and compile vertex shader
 	jeff::Shader shader(vertexShaderSource, fragmentShaderSource);
 
-
-
-	shader.use();
-	glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
-	shader.setInt("tex2", 1);
-
 	
 	
 	//Render loop
@@ -147,15 +151,33 @@ int main() {
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shader.use();
+		shader.setFloat("_Time", glfwGetTime());
+		shader.setInt("tex1", 0);
+		shader.setInt("tex2", 1);
+
+		//background texture
+		shader.setBool("jumpEnabled", false);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, tex1);
+		shader.setInt("useTex1", 1);
+		shader.setInt("useTex2", 0);
+		//background draw call
+		glBindVertexArray(VAO1);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+		//Character texture
+		shader.setBool("jumpEnabled", true);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex2);
-
-
-		//DRAW CALL
-		glBindVertexArray(VAO);
+		shader.setInt("useTex1", 0);
+		shader.setInt("useTex2", 1);
+		glBindVertexArray(VAO1);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		
+		
 
 
 		//Drawing happens here!
