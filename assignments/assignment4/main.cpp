@@ -14,6 +14,13 @@ const int SCREEN_HEIGHT = 720;
 
 float texCoordMulip = 10.0f;
 
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
 
 float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -82,6 +89,8 @@ unsigned int indices[] = {
 
 const char* vertexShaderSource = "assets/vertexShader.vert";
 const char* fragmentShaderSource = "assets/fragShader.frag";
+
+void processInput(GLFWwindow* window);
 
 int main() {
 	printf("Initializing...");
@@ -178,18 +187,23 @@ int main() {
 	jeff::Shader shader(vertexShaderSource, fragmentShaderSource);
 
 
+
+
 	shader.use();
 	shader.setInt("tex1", 0);
 	shader.setInt("tex2", 1);
-	
+	 
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
-		
+
+		//gets input from keyboard
+		processInput(window);
 
 		//Clear framebuffer
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		//background texture
 		glActiveTexture(GL_TEXTURE0);
@@ -198,9 +212,10 @@ int main() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex2);
 
+		glEnable(GL_DEPTH_TEST);
+
 		//activates shader
 		shader.use();
-
 
 		//initializes model, view, and projection
 		glm::mat4 model = glm::mat4(1.0f);
@@ -209,14 +224,30 @@ int main() {
 
 		model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
 		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f); 
+		shader.setMat4("projection", projection);
 		
-		unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-		unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
-		unsigned int projLoc = glGetUniformLocation(shader.ID, "projection");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); 
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+		//Get camera direction
+		glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); 
+		glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f); 
+		glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget); 
+
+		//Right axis
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
+		glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+
+		//up axis
+		glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight); 
+
+		view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
+			glm::vec3(0.0f, 0.0f, 0.0f), 
+			glm::vec3(0.0f, 1.0f, 0.0f)); 
+	
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
+		shader.setMat4("view", view); 
+
+		
 
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 10; i++)
@@ -231,10 +262,29 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
+		
 	
 		//Drawing happens here!
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+
 	printf("Shutting down...");
+	
 }
+
+void processInput(GLFWwindow* window)
+{
+	float cameraSpeed = 2.5f * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+
