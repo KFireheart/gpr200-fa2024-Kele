@@ -14,9 +14,19 @@ const int SCREEN_HEIGHT = 720;
 
 float texCoordMulip = 10.0f;
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); 
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); 
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+bool firstMouse = true;
+float yaw = -90.0f;	
+float pitch = 0.0f;
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+float fov = 60.0f;
+
+bool isPerspective = true;
+bool tabKeyPressed = false;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -76,7 +86,18 @@ glm::vec3 cubeLocations[] = {
 	glm::vec3(1.3f, -2.0f, -2.5f),
 	glm::vec3(1.5f,  2.0f, -2.5f),
 	glm::vec3(1.5f,  0.2f, -1.5f),
-	glm::vec3(-1.3f,  1.0f, -1.5f)
+	glm::vec3(-1.3f,  1.0f, -1.5f),
+	glm::vec3(1.0f,  0.0f,  0.0f),
+	glm::vec3(-2.0f,  5.0f, -15.0f),
+	glm::vec3(-3.5f, -2.2f, -2.5f),
+	glm::vec3(-5.8f, -2.0f, -12.3f),
+	glm::vec3(9.4f, -0.4f, -3.5f),
+	glm::vec3(-0.7f,  3.0f, -7.5f),
+	glm::vec3(-1.3f, -2.0f, -2.5f),
+	glm::vec3(4.5f,  2.0f, -2.5f),
+	glm::vec3(2.5f,  0.2f, -1.5f),
+	glm::vec3(-2.3f,  1.0f, -1.5f)
+
 }; 
 
 
@@ -91,6 +112,8 @@ const char* vertexShaderSource = "assets/vertexShader.vert";
 const char* fragmentShaderSource = "assets/fragShader.frag";
 
 void processInput(GLFWwindow* window);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 
 int main() {
 	printf("Initializing...");
@@ -193,15 +216,20 @@ int main() {
 	shader.setInt("tex1", 0);
 	shader.setInt("tex2", 1);
 	 
-
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		//gets input from keyboard
 		processInput(window);
+		glfwSetCursorPosCallback(window, mouse_callback);
+		glfwSetScrollCallback(window, scroll_callback);
 
 		//Clear framebuffer
-		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -217,40 +245,30 @@ int main() {
 		//activates shader
 		shader.use();
 
-		//initializes model, view, and projection
-		glm::mat4 model = glm::mat4(1.0f);
+		//
+		glm::vec3 direction;
+		direction.x = cos(glm::radians(yaw));
+		direction.z = sin(glm::radians(yaw));
+
+		//initializes view, and projection
 		glm::mat4 view = glm::mat4(1.0f);
 		glm::mat4 projection;
 
-		model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f); 
+		if (isPerspective) {
+			projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f); 
+		}
+		else {
+			float orthoSize = 10.0f;
+			projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 100.0f); 
+		}
+		 
 		shader.setMat4("projection", projection);
-		
 
-		//Get camera direction
-		glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); 
-		glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f); 
-		glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget); 
-
-		//Right axis
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
-		glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-
-		//up axis
-		glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight); 
-
-		view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
-			glm::vec3(0.0f, 0.0f, 0.0f), 
-			glm::vec3(0.0f, 1.0f, 0.0f)); 
-	
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
 		shader.setMat4("view", view); 
 
-		
-
 		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < 10; i++)
+		for (unsigned int i = 0; i < 20; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubeLocations[i]);
@@ -276,7 +294,14 @@ int main() {
 
 void processInput(GLFWwindow* window)
 {
-	float cameraSpeed = 2.5f * deltaTime;
+	float baseSpeed = 2.0f;
+	float cameraSpeed = baseSpeed * deltaTime;
+
+	//Sprint
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) 
+		cameraSpeed *= 4.0f; 
+
+	//Basic movements
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -285,6 +310,69 @@ void processInput(GLFWwindow* window)
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) 
+		cameraPos += cameraSpeed * cameraUp; 
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraUp;
+	
+	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !tabKeyPressed) {
+		isPerspective = !isPerspective;
+		tabKeyPressed = true;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) 
+	{
+		tabKeyPressed = false;
+	}
+		
+}
+
+//Mouse movement
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; 
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f; 
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
+}
+
+//Mouse scroll
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	fov -= (float)yoffset;
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 120.0f)
+		fov = 120.0f;
 }
 
 
