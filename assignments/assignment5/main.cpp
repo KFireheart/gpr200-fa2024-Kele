@@ -9,6 +9,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <ew/external/stb_image.h>
 
+//Include IMGUI
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
@@ -27,6 +32,8 @@ float fov = 60.0f;
 
 bool isPerspective = true;
 bool tabKeyPressed = false;
+
+bool isLocked = true;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -121,7 +128,7 @@ int main() {
 		printf("GLFW failed to init!");
 		return 1;
 	}
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3DFun", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Lighting", NULL, NULL);
 	if (window == NULL) {
 		printf("GLFW failed to create window");
 		return 1;
@@ -133,6 +140,12 @@ int main() {
 	}
 
 	stbi_set_flip_vertically_on_load(true);
+
+	//Initialize IMGUI
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init();
 
 
 	unsigned int VBO, VAO, EBO;
@@ -219,18 +232,40 @@ int main() {
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 
+		
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		//gets input from keyboard
-		processInput(window);
-		glfwSetCursorPosCallback(window, mouse_callback);
-		glfwSetScrollCallback(window, scroll_callback);
-
 		//Clear framebuffer
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//gets input from keyboard
+		std::cout << isLocked << std::endl;
+		processInput(window);
+		if (isLocked = false) 
+		{
+			glfwSetCursorPosCallback(window, mouse_callback); 
+		}
+		
+		glfwSetScrollCallback(window, scroll_callback);
+
+		
+
+		//start drawing IMGUI
+		ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui::NewFrame();
+
+		//Settings window
+		ImGui::Begin("Settings");
+		ImGui::Text("Add Controlls Here!");
+		ImGui::End();
+
+		//Render the IMGUI elements using OpenGL
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
 		//background texture
@@ -245,7 +280,7 @@ int main() {
 		//activates shader
 		shader.use();
 
-		//
+
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw));
 		direction.z = sin(glm::radians(yaw));
@@ -323,6 +358,13 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) 
 	{
 		tabKeyPressed = false;
+	}
+
+	//Checks to see if right mouse is pressed, then unlocks the mouse
+	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) 
+	{
+		isLocked = false;
+		printf("mouse button pressed!");
 	}
 		
 }
