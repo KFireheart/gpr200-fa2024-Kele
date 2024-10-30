@@ -86,13 +86,42 @@ float vertices[] = {
 };
 
 float lightCube[] = {
-	// Px    Py		Pz  
-	-0.5f, -0.5f, -0.5f,
-	 0.5f, -0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	-0.5f,  0.5f, -0.5f,
-	-0.5f, -0.5f, -0.5f
+	// Positions         // Normals
+	// Front face
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Bottom-left
+	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Bottom-right
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Top-right
+	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Top-left
+
+	// Back face
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Bottom-left
+	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Bottom-right
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Top-right
+	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Top-left
+
+	// Left face
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  // Top-right
+	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  // Top-left
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  // Bottom-left
+	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  // Bottom-right
+
+	// Right face
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // Top-left
+	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  // Top-right
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  // Bottom-right
+	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // Bottom-left
+
+	 // Top face
+	 -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  // Top-left
+	  0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  // Top-right
+	  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // Bottom-right
+	 -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // Bottom-left
+
+	 // Bottom face
+	 -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  // Top-left
+	  0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  // Top-right
+	  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  // Bottom-right
+	 -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f   // Bottom-left
 };
 
 
@@ -137,7 +166,6 @@ const char* lightVertSource = "assets/lightSource.vert";
 void processInput(GLFWwindow* window);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods); 
 
 int main() {
 	printf("Initializing...");
@@ -168,8 +196,9 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-
+	//cubes
 	unsigned int VBO, VAO, EBO;
+	
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -194,6 +223,34 @@ int main() {
 	//UV
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); 
 	glEnableVertexAttribArray(2); 
+
+	//------------------------------------------------------------------------------------------------
+
+	//light cube
+	unsigned int VBO2, VAO2, EBO2;
+
+	glGenVertexArrays(1, &VAO2);
+	glGenBuffers(1, &VBO2);
+	glGenBuffers(1, &EBO2);
+
+	glBindVertexArray(VAO2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(lightCube), lightCube, GL_STATIC_DRAW); 
+
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
+
+	//light position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
+	glEnableVertexAttribArray(0); 
+
+	//light Normal XYZ
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
+	glEnableVertexAttribArray(1); 
+
+	//____________________________________________________________________________________________________
 
 	// load and create a texture 
 	unsigned int tex1, tex2;
@@ -250,19 +307,9 @@ int main() {
 	jeff::Shader lightShader(lightVertSource, lightFragSource);
 
 
-	lightShader.use();
-
 	cubesShader.use(); 
 	cubesShader.setInt("tex1", 0);
 	cubesShader.setInt("tex2", 1);
-
-
-	////Sets the cursor default mode to being disabled
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	////Sets the callback for the mosue button
-	//glfwSetMouseButtonCallback(window, mouse_button_callback);
-
 
 	 
 	//Render loop
@@ -296,6 +343,8 @@ int main() {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+		
+
 
 		//background texture
 		glActiveTexture(GL_TEXTURE0);
@@ -328,10 +377,11 @@ int main() {
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
 		cubesShader.setMat4("view", view);
 
+		 
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 20; i++)
 		{
-			glm::mat4 model = glm::mat4(1.0f);
+			glm::mat4 model = glm::mat4(1.0f); 
 			model = glm::translate(model, cubeLocations[i]);
 			float angle = 20.0f * i;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
@@ -340,6 +390,25 @@ int main() {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+
+
+		//lighting shader processing
+		lightShader.use(); 
+		lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f); 
+		lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f); 
+		lightShader.setVec3("lightPos", lightPos); 
+
+		lightShader.setMat4("projection", projection); 
+		lightShader.setMat4("view", view);
+		glm::mat4 model = glm::mat4(1.0f);  
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+		lightShader.setMat4("model", model);
+
+		//light cube
+		glBindVertexArray(VAO2);
+		glDrawArrays(GL_TRIANGLES, 0, 36); 
 
 		
 	
@@ -353,6 +422,7 @@ int main() {
 	
 }
 
+//input processing
 void processInput(GLFWwindow* window)
 {
 	float baseSpeed = 2.0f;
@@ -392,18 +462,6 @@ void processInput(GLFWwindow* window)
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) { 
 		isMouseDown = false;
-	}
-}
-
-//Mouse lock
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-		if (action == GLFW_PRESS) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-		else if (action == GLFW_RELEASE) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		}
 	}
 }
 
