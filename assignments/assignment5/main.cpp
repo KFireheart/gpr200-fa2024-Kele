@@ -33,10 +33,12 @@ float fov = 60.0f;
 bool isPerspective = true;
 bool tabKeyPressed = false;
 
-bool isLocked = true;
+bool isMouseDown = true;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f); 
 
 float vertices[] = {
 	// Px    Py		Pz     Nx     Ny     Nz     U    V
@@ -83,6 +85,16 @@ float vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 
+float lightCube[] = {
+	// Px    Py		Pz  
+	-0.5f, -0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,
+	 0.5f,  0.5f, -0.5f,
+	 0.5f,  0.5f, -0.5f,
+	-0.5f,  0.5f, -0.5f,
+	-0.5f, -0.5f, -0.5f
+};
+
 
 glm::vec3 cubeLocations[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
@@ -118,10 +130,14 @@ unsigned int indices[] = {
 
 const char* vertexShaderSource = "assets/vertexShader.vert";
 const char* fragmentShaderSource = "assets/fragShader.frag";
+const char* lightFragSource = "assets/lightSource.frag";
+const char* lightVertSource = "assets/lightSource.vert";
+
 
 void processInput(GLFWwindow* window);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods); 
 
 int main() {
 	printf("Initializing...");
@@ -143,8 +159,8 @@ int main() {
 	stbi_set_flip_vertically_on_load(true);
 
 	//Lighting stuff
-	//float ambientStrength = 0.1;
-	//vec3 ambient = ambientStrength * lightColor;
+	/*float ambientStrength = 0.1;
+	vec3 ambient = ambientStrength * lightColor;*/
 
 	//Initialize IMGUI
 	IMGUI_CHECKVERSION();
@@ -230,14 +246,24 @@ int main() {
 
 	
 	//Create and compile vertex shader
-	jeff::Shader shader(vertexShaderSource, fragmentShaderSource);
+	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource);
+	jeff::Shader lightShader(lightVertSource, lightFragSource);
 
 
+	lightShader.use();
+
+	cubesShader.use(); 
+	cubesShader.setInt("tex1", 0);
+	cubesShader.setInt("tex2", 1);
 
 
-	shader.use();
-	shader.setInt("tex1", 0);
-	shader.setInt("tex2", 1);
+	////Sets the cursor default mode to being disabled
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	////Sets the callback for the mosue button
+	//glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+
 	 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -248,20 +274,13 @@ int main() {
 		lastFrame = currentFrame;
 
 		//Clear framebuffer
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//gets input from keyboard
-		std::cout << isLocked << std::endl;
+		//gets input from user
 		processInput(window);
-		if (isLocked = false) 
-		{
-			glfwSetCursorPosCallback(window, mouse_callback); 
-		}
-		
-		glfwSetScrollCallback(window, scroll_callback);
-
-		
+		glfwSetCursorPosCallback(window, mouse_callback);
+		glfwSetScrollCallback(window, scroll_callback); 
 
 		//start drawing IMGUI
 		ImGui_ImplGlfw_NewFrame();
@@ -287,9 +306,6 @@ int main() {
 
 		glEnable(GL_DEPTH_TEST);
 
-		//activates shader
-		shader.use();
-
 
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw));
@@ -307,10 +323,10 @@ int main() {
 			projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 100.0f); 
 		}
 		 
-		shader.setMat4("projection", projection);
+		cubesShader.setMat4("projection", projection);
 
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
-		shader.setMat4("view", view); 
+		cubesShader.setMat4("view", view);
 
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 20; i++)
@@ -319,7 +335,7 @@ int main() {
 			model = glm::translate(model, cubeLocations[i]);
 			float angle = 20.0f * i;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			shader.setMat4("model", model);
+			cubesShader.setMat4("model", model);
 
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -370,18 +386,33 @@ void processInput(GLFWwindow* window)
 		tabKeyPressed = false;
 	}
 
-	//Checks to see if right mouse is pressed, then unlocks the mouse
-	if (glfwGetKey(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) 
-	{
-		isLocked = false;
-		printf("mouse button pressed!");
+	//Checks to see if the mouse button is pressed, then allows the user to move the camera around
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+		isMouseDown = true;
 	}
-		
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) { 
+		isMouseDown = false;
+	}
+}
+
+//Mouse lock
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		if (action == GLFW_PRESS) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+		else if (action == GLFW_RELEASE) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+	}
 }
 
 //Mouse movement
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
+	//doesnt process if right mouse isnt down
+	if (!isMouseDown) return;
+
 	float xpos = static_cast<float>(xposIn);
 	float ypos = static_cast<float>(yposIn);
 
