@@ -20,4 +20,4 @@ target_link_libraries(assignment5 PUBLIC core IMGUI glm)
 target_include_directories(assignment5 PUBLIC ${CORE_INC_DIR} ${stb_INCLUDE_DIR})
 
 #Trigger asset copy when assignment5 is built
-add_dependencies(assignment5 copyAssetsA4)
+add_dependencies(assignment5 copyAssetsA5)
