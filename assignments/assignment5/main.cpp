@@ -112,6 +112,10 @@ glm::vec3 cubeLocations[] = {
 //light position
 glm::vec3 lightPos(1.0f, 0.5f, 2.0f); 
 
+//light color
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+
+
 
 const char* vertexShaderSource = "assets/vertexShader.vert";
 const char* fragmentShaderSource = "assets/fragShader.frag";
@@ -158,11 +162,11 @@ int main() {
 	
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	
-	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindVertexArray(VAO);  
 
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -173,7 +177,7 @@ int main() {
 	glEnableVertexAttribArray(1); 
 
 	//UV
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); 
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); 
 	glEnableVertexAttribArray(2); 
 
 	//------------------------------------------------------------------------------------------------
@@ -245,34 +249,39 @@ int main() {
 
 	
 	//Create and compile vertex shader
-	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource); 
 	jeff::Shader lightShader(lightVertSource, lightFragSource); 
+	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource); 
 	
 	
-	
-	 
+	cubesShader.use();
+	cubesShader.setInt("tex1", 0);
+	cubesShader.setInt("tex2", 1);
+
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
+
+		glEnable(GL_DEPTH_TEST); 
+
+		//ambient strength
+		float ambientStrength = 1;
+		//Specular strength
+		float specularStrength = 0.5;
+
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		//gets input from user 
+		processInput(window); 
+		glfwSetScrollCallback(window, scroll_callback); 
+
 		//Clear framebuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//lighting shader processing
-		cubesShader.use();
-		cubesShader.setInt("tex1", 0);
-		cubesShader.setInt("tex2", 1);
-		cubesShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-		cubesShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		cubesShader.setVec3("lightPos", lightPos);
-
-		//gets input from user
-		processInput(window);
-		glfwSetScrollCallback(window, scroll_callback); 
+		
+		
 
 		if (isMouseDown) {
 			
@@ -288,16 +297,39 @@ int main() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui::NewFrame();
 
+		//lighting shader processing
+		cubesShader.use();
+		cubesShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		cubesShader.setVec3("lightPos", lightPos);
+		cubesShader.setFloat("ambientStrenth", ambientStrength);
+		cubesShader.setFloat("specularStrenth", specularStrength);
+
 		//Settings window
 		ImGui::Begin("Settings");
-		ImGui::DragFloat("Light Position", &lightPos.x, 1.0f);
-		//ImGui::SliderFloat("Ambient", &ambient, 0.0f, 1.0f);
+		ImGui::PushItemWidth(40);
+		ImGui::DragFloat("X", &lightPos.x, 1.0f); 
+		ImGui::SameLine();
+		ImGui::DragFloat("Y", &lightPos.y, 1.0f);
+		ImGui::SameLine(); 
+		ImGui::DragFloat("Z Light Position", &lightPos.z, 1.0f);
+		ImGui::PopItemWidth();
+		//ImGui::ColorEdit3("Light Color", &lightColor, 1.0f);
+		ImGui::SliderFloat("Ambient", &ambientStrength, 0.0f, 1.0f);
 		ImGui::End();
 
 		//Render the IMGUI elements using OpenGL
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+		//initializes view, and projection
+		glm::mat4 view = glm::mat4(1.0f); 
+		glm::mat4 projection; 
+
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
+		cubesShader.setMat4("projection", projection);
+		cubesShader.setMat4("view", view);
+		cubesShader.setVec3("veiwPos", cameraPos);
+		
 
 		//background texture
 		glActiveTexture(GL_TEXTURE0);
@@ -306,16 +338,14 @@ int main() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex2);
 
-		glEnable(GL_DEPTH_TEST);
+		
 
 
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw));
 		direction.z = sin(glm::radians(yaw));
 
-		//initializes view, and projection
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection;
+		
 
 		if (isPerspective) {
 			projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f); 
@@ -325,11 +355,7 @@ int main() {
 			projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 100.0f); 
 		}
 		 
-		
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
-		cubesShader.setMat4("projection", projection);
-		cubesShader.setMat4("view", view);
-		 
+
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 20; i++)
 		{
