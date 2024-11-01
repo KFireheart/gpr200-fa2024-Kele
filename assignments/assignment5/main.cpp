@@ -85,49 +85,6 @@ float vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 
-float lightCubeVerts[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-};
 
 glm::vec3 cubeLocations[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
@@ -152,12 +109,8 @@ glm::vec3 cubeLocations[] = {
 	glm::vec3(-2.3f,  1.0f, -1.5f),
 }; 
 
-
-
-unsigned int indices[] = {
-	0, 1, 3, // first trinagle
-	1, 2, 3 // second triangle
-};
+//light position
+glm::vec3 lightPos(1.0f, 0.5f, 2.0f); 
 
 
 const char* vertexShaderSource = "assets/vertexShader.vert";
@@ -201,20 +154,15 @@ int main() {
 	ImGui_ImplOpenGL3_Init();
 
 	//cubes
-	unsigned int VBO, VAO, EBO;
+	unsigned int VBO, VAO;
 	
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
 	
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -231,17 +179,15 @@ int main() {
 	//------------------------------------------------------------------------------------------------
 
 	//light cube
-	unsigned int VBO2, VAO2, EBO2;
+	unsigned int VBO2, VAO2;
 
 	glGenVertexArrays(1, &VAO2);
-	glGenBuffers(1, &VBO2);
-	glGenBuffers(1, &EBO2); 
+	glGenBuffers(1, &VBO2); 
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO2); 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(lightCubeVerts), lightCubeVerts, GL_STATIC_DRAW); 
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); 
 
 	glBindVertexArray(VAO2);
-
 
 	//light position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); 
@@ -299,17 +245,11 @@ int main() {
 
 	
 	//Create and compile vertex shader
-	jeff::Shader lightShader(lightVertSource, lightFragSource); 
 	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource); 
+	jeff::Shader lightShader(lightVertSource, lightFragSource); 
 	
-
-
-	cubesShader.use(); 
-	cubesShader.setInt("tex1", 0);
-	cubesShader.setInt("tex2", 1);
-
-	//light position
-	glm::vec3 lightPos(1.0f, 0.5f, 2.0f);
+	
+	
 	 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -321,6 +261,14 @@ int main() {
 		//Clear framebuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//lighting shader processing
+		cubesShader.use();
+		cubesShader.setInt("tex1", 0);
+		cubesShader.setInt("tex2", 1);
+		cubesShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+		cubesShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		cubesShader.setVec3("lightPos", lightPos);
 
 		//gets input from user
 		processInput(window);
@@ -377,11 +325,10 @@ int main() {
 			projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 100.0f); 
 		}
 		 
-		cubesShader.setMat4("projection", projection);
-
+		
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
+		cubesShader.setMat4("projection", projection);
 		cubesShader.setMat4("view", view);
-
 		 
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 20; i++)
@@ -397,19 +344,14 @@ int main() {
 		}
 
 
-		//lighting shader processing
-		lightShader.use(); 
-		lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f); 
-		lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f); 
-		lightShader.setVec3("lightPos", lightPos);
-
-		lightShader.setMat4("projection", projection);
+		//Draw lamp
+		lightShader.use();
+		lightShader.setMat4("projection", projection); 
 		lightShader.setMat4("view", view);
-		glm::mat4 model = glm::mat4(1.0f);  
+		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPos);
 		lightShader.setMat4("model", model);
 
-		//light cube
 		glBindVertexArray(VAO2);
 		glDrawArrays(GL_TRIANGLES, 0, 36); 
 	
