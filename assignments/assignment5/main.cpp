@@ -38,7 +38,7 @@ bool isMouseDown = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f); 
+
 
 float vertices[] = {
 	// Px    Py		Pz     Nx     Ny     Nz     U    V
@@ -85,45 +85,49 @@ float vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 
-float lightCube[] = {
-	// Positions         // Normals
-	// Front face
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Bottom-left
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Bottom-right
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Top-right
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // Top-left
+float lightCubeVerts[] = {
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-	// Back face
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Bottom-left
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Bottom-right
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Top-right
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  // Top-left
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
 
-	// Left face
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  // Top-right
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  // Top-left
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  // Bottom-left
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  // Bottom-right
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-	// Right face
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // Top-left
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  // Top-right
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  // Bottom-right
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // Bottom-left
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-	 // Top face
-	 -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  // Top-left
-	  0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  // Top-right
-	  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // Bottom-right
-	 -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // Bottom-left
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-	 // Bottom face
-	 -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  // Top-left
-	  0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  // Top-right
-	  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  // Bottom-right
-	 -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f   // Bottom-left
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
-
 
 glm::vec3 cubeLocations[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
@@ -145,8 +149,7 @@ glm::vec3 cubeLocations[] = {
 	glm::vec3(-1.3f, -2.0f, -2.5f),
 	glm::vec3(4.5f,  2.0f, -2.5f),
 	glm::vec3(2.5f,  0.2f, -1.5f),
-	glm::vec3(-2.3f,  1.0f, -1.5f)
-
+	glm::vec3(-2.3f,  1.0f, -1.5f),
 }; 
 
 
@@ -159,8 +162,9 @@ unsigned int indices[] = {
 
 const char* vertexShaderSource = "assets/vertexShader.vert";
 const char* fragmentShaderSource = "assets/fragShader.frag";
+const char* lightVertSource = "assets/lightSource.vert"; 
 const char* lightFragSource = "assets/lightSource.frag";
-const char* lightVertSource = "assets/lightSource.vert";
+
 
 
 void processInput(GLFWwindow* window);
@@ -231,24 +235,17 @@ int main() {
 
 	glGenVertexArrays(1, &VAO2);
 	glGenBuffers(1, &VBO2);
-	glGenBuffers(1, &EBO2);
+	glGenBuffers(1, &EBO2); 
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2); 
+	glBufferData(GL_ARRAY_BUFFER, sizeof(lightCubeVerts), lightCubeVerts, GL_STATIC_DRAW); 
 
 	glBindVertexArray(VAO2);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(lightCube), lightCube, GL_STATIC_DRAW); 
-
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
 	//light position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); 
 	glEnableVertexAttribArray(0); 
-
-	//light Normal XYZ
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
-	glEnableVertexAttribArray(1); 
 
 	//____________________________________________________________________________________________________
 
@@ -291,7 +288,6 @@ int main() {
 	data = stbi_load("assets/happyMushroom.png", &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		// note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
@@ -303,19 +299,21 @@ int main() {
 
 	
 	//Create and compile vertex shader
-	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource);
-	jeff::Shader lightShader(lightVertSource, lightFragSource);
+	jeff::Shader lightShader(lightVertSource, lightFragSource); 
+	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource); 
+	
 
 
 	cubesShader.use(); 
 	cubesShader.setInt("tex1", 0);
 	cubesShader.setInt("tex2", 1);
 
+	//light position
+	glm::vec3 lightPos(1.0f, 0.5f, 2.0f);
 	 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 
-		
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -326,8 +324,16 @@ int main() {
 
 		//gets input from user
 		processInput(window);
-		glfwSetCursorPosCallback(window, mouse_callback);
 		glfwSetScrollCallback(window, scroll_callback); 
+
+		if (isMouseDown) {
+			
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
 
 		//start drawing IMGUI
 		ImGui_ImplGlfw_NewFrame();
@@ -336,14 +342,13 @@ int main() {
 
 		//Settings window
 		ImGui::Begin("Settings");
-		ImGui::Text("Add Controlls Here!");
+		ImGui::DragFloat("Light Position", &lightPos.x, 1.0f);
+		//ImGui::SliderFloat("Ambient", &ambient, 0.0f, 1.0f);
 		ImGui::End();
 
 		//Render the IMGUI elements using OpenGL
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-		
 
 
 		//background texture
@@ -396,21 +401,17 @@ int main() {
 		lightShader.use(); 
 		lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f); 
 		lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f); 
-		lightShader.setVec3("lightPos", lightPos); 
+		lightShader.setVec3("lightPos", lightPos);
 
-		lightShader.setMat4("projection", projection); 
+		lightShader.setMat4("projection", projection);
 		lightShader.setMat4("view", view);
 		glm::mat4 model = glm::mat4(1.0f);  
-		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
 		lightShader.setMat4("model", model);
 
 		//light cube
 		glBindVertexArray(VAO2);
 		glDrawArrays(GL_TRIANGLES, 0, 36); 
-
-		
 	
 		//Drawing happens here!
 		glfwSwapBuffers(window);
@@ -468,8 +469,7 @@ void processInput(GLFWwindow* window)
 //Mouse movement
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-	//doesnt process if right mouse isnt down
-	if (!isMouseDown) return;
+	
 
 	float xpos = static_cast<float>(xposIn);
 	float ypos = static_cast<float>(yposIn);
