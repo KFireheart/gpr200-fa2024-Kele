@@ -173,7 +173,7 @@ int main() {
 	glEnableVertexAttribArray(0);
 
 	//Normal XYZ
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); 
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); 
 	glEnableVertexAttribArray(1); 
 
 	//UV
@@ -252,21 +252,25 @@ int main() {
 	jeff::Shader lightShader(lightVertSource, lightFragSource); 
 	jeff::Shader cubesShader(vertexShaderSource, fragmentShaderSource); 
 	
+	glm::vec3 color(1.0f, 1.0f, 1.0f);
+
+	//ambient strength
+	float ambientStrength = 0.5;
+	//Specular strength
+	float specularStrength = 0.5;
+	//shininess 
+	float shininess = 0.0;
+	//diffuse
+	float diffuse = 0.0;
 	
 	cubesShader.use();
 	cubesShader.setInt("tex1", 0);
-	cubesShader.setInt("tex2", 1);
+	cubesShader.setInt("tex2", 1); 
+
+	glEnable(GL_DEPTH_TEST);
 
 	//Render loop
-	while (!glfwWindowShouldClose(window)) {
-
-		glEnable(GL_DEPTH_TEST); 
-
-		//ambient strength
-		float ambientStrength = 1;
-		//Specular strength
-		float specularStrength = 0.5;
-
+	while (!glfwWindowShouldClose(window)) { 
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -277,49 +281,19 @@ int main() {
 		glfwSetScrollCallback(window, scroll_callback); 
 
 		//Clear framebuffer
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		
-		
-
-		if (isMouseDown) {
-			
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		}
-		else
-		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-
-		//start drawing IMGUI
-		ImGui_ImplGlfw_NewFrame();
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui::NewFrame();
+	
 
 		//lighting shader processing
 		cubesShader.use();
-		cubesShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		cubesShader.setVec3("lightColor", color);
 		cubesShader.setVec3("lightPos", lightPos);
-		cubesShader.setFloat("ambientStrenth", ambientStrength);
-		cubesShader.setFloat("specularStrenth", specularStrength);
+		cubesShader.setFloat("ambientStrength", ambientStrength);
+		cubesShader.setFloat("specularStrength", specularStrength);
+		cubesShader.setFloat("shininess", shininess);
 
-		//Settings window
-		ImGui::Begin("Settings");
-		ImGui::PushItemWidth(40);
-		ImGui::DragFloat("X", &lightPos.x, 1.0f); 
-		ImGui::SameLine();
-		ImGui::DragFloat("Y", &lightPos.y, 1.0f);
-		ImGui::SameLine(); 
-		ImGui::DragFloat("Z Light Position", &lightPos.z, 1.0f);
-		ImGui::PopItemWidth();
-		//ImGui::ColorEdit3("Light Color", &lightColor, 1.0f);
-		ImGui::SliderFloat("Ambient", &ambientStrength, 0.0f, 1.0f);
-		ImGui::End();
-
-		//Render the IMGUI elements using OpenGL
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		
 
 		//initializes view, and projection
 		glm::mat4 view = glm::mat4(1.0f); 
@@ -328,7 +302,7 @@ int main() {
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
 		cubesShader.setMat4("projection", projection);
 		cubesShader.setMat4("view", view);
-		cubesShader.setVec3("veiwPos", cameraPos);
+		
 		
 
 		//background texture
@@ -338,14 +312,12 @@ int main() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex2);
 
-		
-
 
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw));
 		direction.z = sin(glm::radians(yaw));
 
-		
+		cubesShader.setVec3("veiwPos", cameraPos);  
 
 		if (isPerspective) {
 			projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f); 
@@ -357,6 +329,7 @@ int main() {
 		 
 
 		glBindVertexArray(VAO);
+
 		for (unsigned int i = 0; i < 20; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f); 
@@ -380,6 +353,36 @@ int main() {
 
 		glBindVertexArray(VAO2);
 		glDrawArrays(GL_TRIANGLES, 0, 36); 
+
+
+		//start drawing IMGUI
+		ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui::NewFrame();
+
+		//Settings window
+		ImGui::Begin("Settings");
+		ImGui::PushItemWidth(40);
+		ImGui::DragFloat("X", &lightPos.x, 1.0f);
+		ImGui::SameLine();
+		ImGui::DragFloat("Y", &lightPos.y, 1.0f);
+		ImGui::SameLine();
+		ImGui::DragFloat("Z Light Position", &lightPos.z, 1.0f);
+		ImGui::PopItemWidth();
+		ImGui::ColorEdit3("Light Color", &color.r, 1.0f);
+		ImGui::SliderFloat("Ambient", &ambientStrength, 0.0f, 1.0f);
+		ImGui::SliderFloat("Shininess ", &shininess, 0.0f, 1.0f);
+		ImGui::SliderFloat("Diffuse ", &diffuse, 0.0f, 1.0f);
+		ImGui::SliderFloat("Specular ", &specularStrength, 0.0f, 2.0f);
+		ImGui::End();
+
+		
+
+		//Render the IMGUI elements using OpenGL
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		
 	
 		//Drawing happens here!
 		glfwSwapBuffers(window);
@@ -427,51 +430,57 @@ void processInput(GLFWwindow* window)
 
 	//Checks to see if the mouse button is pressed, then allows the user to move the camera around
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		isMouseDown = true;
+		isMouseDown = true; 
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+		glfwSetCursorPosCallback(window, mouse_callback); 
+
+		
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) { 
 		isMouseDown = false;
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
 	}
 }
 
 //Mouse movement
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-	
 
-	float xpos = static_cast<float>(xposIn);
-	float ypos = static_cast<float>(yposIn);
+	if (!isMouseDown) return;
 
-	if (firstMouse)
-	{
+		float xpos = static_cast<float>(xposIn);
+		float ypos = static_cast<float>(yposIn);
+
+		if (firstMouse)
+		{
+			lastX = xpos;
+			lastY = ypos;
+			firstMouse = false;
+		}
+
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos;
 		lastX = xpos;
 		lastY = ypos;
-		firstMouse = false;
-	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; 
-	lastX = xpos;
-	lastY = ypos;
+		float sensitivity = 0.1f;
+		xoffset *= sensitivity;
+		yoffset *= sensitivity;
 
-	float sensitivity = 0.1f; 
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
+		yaw += xoffset;
+		pitch += yoffset;
 
 
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
+		if (pitch > 89.0f)
+			pitch = 89.0f;
+		if (pitch < -89.0f)
+			pitch = -89.0f;
 
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(front);
+		glm::vec3 front;
+		front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		front.y = sin(glm::radians(pitch));
+		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		cameraFront = glm::normalize(front);
 }
 
 //Mouse scroll

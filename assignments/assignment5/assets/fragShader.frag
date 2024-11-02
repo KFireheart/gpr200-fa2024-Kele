@@ -14,7 +14,9 @@ uniform vec3 lightColor;
 uniform vec3 viewPos;
 
 uniform float specularStrength;
+uniform float shininess;
 uniform float ambientStrength;
+uniform float diffuseStrength;
 
 void main()
 {
@@ -29,10 +31,10 @@ void main()
 
     //Specular
     vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
 
     //Calculate specular
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), specularStrength);
+    float spec = pow(max(dot(viewDir, halfwayDir), 0.0), shininess);
     vec3 specular = specularStrength * spec * lightColor;
 
     // Combine ambient and diffuse lighting
