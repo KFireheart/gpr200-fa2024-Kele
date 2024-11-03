@@ -27,18 +27,16 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 diffuse = diff * lightColor * diffuseStrength;
 
-    //Specular
+    // Specular lighting
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-
-    //Calculate specular
-    float spec = pow(max(dot(viewDir, halfwayDir), 0.0), shininess);
+    float spec = pow(max(dot(norm, halfwayDir), 0.0), shininess);
     vec3 specular = specularStrength * spec * lightColor;
 
-    // Combine ambient and diffuse lighting
-    vec3 lighting = (ambient + diffuse + specular);
+    // Combine ambient, diffuse, and specular lighting
+    vec3 lighting = ambient + diffuse + specular;
 
     // Sample the texture color and apply lighting
     vec4 texColor = mix(texture(tex1, TexCoord), texture(tex2, TexCoord), 0.5);

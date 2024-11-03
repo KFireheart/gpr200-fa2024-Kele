@@ -127,6 +127,7 @@ const char* lightFragSource = "assets/lightSource.frag";
 void processInput(GLFWwindow* window);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 int main() {
 	printf("Initializing...");
@@ -147,15 +148,10 @@ int main() {
 
 	stbi_set_flip_vertically_on_load(true);
 
-	//Lighting stuff
-	/*float ambientStrength = 0.1;
-	vec3 ambient = ambientStrength * lightColor;*/
-
-	//Initialize IMGUI
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init();
+	//gets input from user 
+	glfwSetScrollCallback(window, scroll_callback); 
+	glfwSetCursorPosCallback(window, mouse_callback); 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 	//cubes
 	unsigned int VBO, VAO;
@@ -255,17 +251,23 @@ int main() {
 	glm::vec3 color(1.0f, 1.0f, 1.0f);
 
 	//ambient strength
-	float ambientStrength = 0.5;
+	float ambientStrength = 0.2f;
 	//Specular strength
-	float specularStrength = 0.5;
+	float specularStrength = 0.5f;
 	//shininess 
-	float shininess = 0.0;
+	float shininess = 4.0f;
 	//diffuse
-	float diffuse = 0.0;
+	float diffuse = 1.0f;
 	
 	cubesShader.use();
 	cubesShader.setInt("tex1", 0);
 	cubesShader.setInt("tex2", 1); 
+
+	//Initialize IMGUI
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -276,15 +278,12 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		//gets input from user 
-		processInput(window); 
-		glfwSetScrollCallback(window, scroll_callback); 
+		processInput(window);
 
 		//Clear framebuffer
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-
 		//lighting shader processing
 		cubesShader.use();
 		cubesShader.setVec3("lightColor", color);
@@ -292,8 +291,7 @@ int main() {
 		cubesShader.setFloat("ambientStrength", ambientStrength);
 		cubesShader.setFloat("specularStrength", specularStrength);
 		cubesShader.setFloat("shininess", shininess);
-
-		
+		cubesShader.setFloat("diffuseStrength", diffuse);
 
 		//initializes view, and projection
 		glm::mat4 view = glm::mat4(1.0f); 
@@ -302,8 +300,6 @@ int main() {
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
 		cubesShader.setMat4("projection", projection);
 		cubesShader.setMat4("view", view);
-		
-		
 
 		//background texture
 		glActiveTexture(GL_TEXTURE0);
@@ -311,7 +307,6 @@ int main() {
 		//overlay texture
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex2);
-
 
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw));
@@ -327,7 +322,6 @@ int main() {
 			projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 100.0f); 
 		}
 		 
-
 		glBindVertexArray(VAO);
 
 		for (unsigned int i = 0; i < 20; i++)
@@ -342,7 +336,6 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-
 		//Draw lamp
 		lightShader.use();
 		lightShader.setMat4("projection", projection); 
@@ -354,9 +347,8 @@ int main() {
 		glBindVertexArray(VAO2);
 		glDrawArrays(GL_TRIANGLES, 0, 36); 
 
-
 		//start drawing IMGUI
-		ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplGlfw_NewFrame(); 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui::NewFrame();
 
@@ -371,19 +363,15 @@ int main() {
 		ImGui::PopItemWidth();
 		ImGui::ColorEdit3("Light Color", &color.r, 1.0f);
 		ImGui::SliderFloat("Ambient", &ambientStrength, 0.0f, 1.0f);
-		ImGui::SliderFloat("Shininess ", &shininess, 0.0f, 1.0f);
+		ImGui::SliderFloat("Shininess ", &shininess, 2.0f, 1024.0f);
 		ImGui::SliderFloat("Diffuse ", &diffuse, 0.0f, 1.0f);
 		ImGui::SliderFloat("Specular ", &specularStrength, 0.0f, 2.0f);
 		ImGui::End();
-
-		
 
 		//Render the IMGUI elements using OpenGL
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		
-	
 		//Drawing happens here!
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -399,6 +387,22 @@ void processInput(GLFWwindow* window)
 {
 	float baseSpeed = 2.0f;
 	float cameraSpeed = baseSpeed * deltaTime;
+
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+		isMouseDown = true;
+
+		if (isMouseDown) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+	}
+
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
+		isMouseDown = false;
+
+		if (!isMouseDown) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+	}
 
 	//Sprint
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) 
@@ -427,25 +431,12 @@ void processInput(GLFWwindow* window)
 	{
 		tabKeyPressed = false;
 	}
-
-	//Checks to see if the mouse button is pressed, then allows the user to move the camera around
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		isMouseDown = true; 
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
-		glfwSetCursorPosCallback(window, mouse_callback); 
-
-		
-	}
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) { 
-		isMouseDown = false;
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-	}
+	
 }
 
 //Mouse movement
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-
 	if (!isMouseDown) return;
 
 		float xpos = static_cast<float>(xposIn);
@@ -486,6 +477,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 //Mouse scroll
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
+	if (!isMouseDown) return;
+
 	fov -= (float)yoffset;
 	if (fov < 1.0f)
 		fov = 1.0f;
